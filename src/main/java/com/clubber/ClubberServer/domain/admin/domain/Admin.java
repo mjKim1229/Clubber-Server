@@ -1,9 +1,13 @@
 package com.clubber.ClubberServer.domain.admin.domain;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.clubber.ClubberServer.domain.admin.exception.AdminAlreadyDeletedException;
 import com.clubber.ClubberServer.domain.club.domain.Club;
 import com.clubber.ClubberServer.domain.user.domain.AccountRole;
 import com.clubber.ClubberServer.domain.user.domain.AccountState;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,47 +19,53 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Admin {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @NotNull
-    private String username;
+	@NotNull
+	private String username;
 
-    @NotNull
-    private String password;
+	@NotNull
+	private String password;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    private AccountState accountState = AccountState.ACTIVE;
+	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.VARCHAR)
+	private AccountState accountState = AccountState.ACTIVE;
 
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    private AccountRole accountRole = AccountRole.ADMIN;
+	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.VARCHAR)
+	private AccountRole accountRole = AccountRole.ADMIN;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "club_id")
-    private Club club;
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "club_id")
+	private Club club;
 
-    public void updatePassword(String password){
-        this.password = password;
-    }
+	public void updatePassword(String password) {
+		this.password = password;
+	}
 
-    public void withDraw() {
-        if(this.accountState == AccountState.INACTIVE){
-            throw AdminAlreadyDeletedException.EXCEPTION;
-        }
-        this.accountState = AccountState.INACTIVE;
-    }
+	public void withDraw() {
+		if (this.accountState == AccountState.INACTIVE) {
+			throw AdminAlreadyDeletedException.EXCEPTION;
+		}
+		this.accountState = AccountState.INACTIVE;
+	}
 
+	@Builder
+	private Admin(Long id, String username, String password, Club club) {
+		this.id = id;
+		this.username = username;
+		this.password = password;
+		this.club = club;
+	}
 }
