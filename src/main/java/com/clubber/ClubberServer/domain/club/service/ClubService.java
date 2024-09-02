@@ -1,21 +1,22 @@
 package com.clubber.ClubberServer.domain.club.service;
 
+
 import com.clubber.ClubberServer.domain.club.domain.*;
 import com.clubber.ClubberServer.domain.club.dto.*;
 import com.clubber.ClubberServer.domain.club.exception.*;
 import com.clubber.ClubberServer.domain.club.repository.ClubRepository;
 import com.clubber.ClubberServer.global.enummapper.EnumMapper;
 import com.clubber.ClubberServer.global.enummapper.EnumMapperVO;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
-
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +44,6 @@ public class ClubService {
     }
 
 
-
     // [소모임] - 특정 학과 소속 소모임들 반환
     public DepartmentSmallDto getClubsByDepartment(Department department){
         List<Club> clubs=clubRepository.findByDepartmentAndIsDeleted(department, false);
@@ -62,9 +62,9 @@ public class ClubService {
     @Transactional
     public GetClubResponse getClubsIndividualPage(Long clubId){
         Optional<Club> clubFound= clubRepository.findClubByIdAndIsDeleted(clubId, false);
-        Club club=clubFound.orElseThrow(()->ClubIdNotFoundException.EXCEPTION);
+        Club club=clubFound.orElseThrow(()-> ClubIdNotFoundException.EXCEPTION);
         club.getClubInfo().increaseTotalView();
-        return GetClubResponse.of(club,GetClubInfoResponse.from(club.getClubInfo()));
+        return GetClubResponse.of(club, GetClubInfoResponse.from(club.getClubInfo()));
 
     }
 
@@ -94,12 +94,18 @@ public class ClubService {
         if (clubs.isEmpty()){
             throw HashtagNotFoundException.EXCEPTION;
         }
-        else {
-            List<GetClubByHashTagResponse> clubDtos = clubs.stream()
-                    .map(club -> GetClubByHashTagResponse.from(club))
-                    .collect(Collectors.toList());
-            return GetClubsByHashTagResponse.of(hashtag, clubDtos);
-        }
+//        List<GetClubByHashTagResponse> clubDtos = clubs.stream()
+//                .map(club -> GetClubByHashTagResponse.from(club))
+//                .collect(Collectors.toList());
+//        return GetClubsByHashTagResponse.of(hashtag, clubDtos);
+        EnumMap<ClubType, List<GetClubByHashTagResponse>> groupedClubs = clubs.stream()
+                .collect(Collectors.groupingBy(
+                        Club::getClubType,
+                        () -> new EnumMap<>(ClubType.class),
+                        Collectors.mapping(GetClubByHashTagResponse::from, Collectors.toList())
+                ));
+
+        return GetClubsByHashTagResponse.of(hashtag,groupedClubs);
 
     }
 
@@ -131,6 +137,6 @@ public class ClubService {
         return colleges.stream()
                 .map(college -> CollegeResponse.from(College.valueOf(college.getCode())))
                 .collect(Collectors.toList());
-    }
 
+    }
 }
